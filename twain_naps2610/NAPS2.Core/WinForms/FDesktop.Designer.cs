@@ -137,7 +137,6 @@ namespace NAPS2.WinForms
             this.btnZoomIn.Image = global::NAPS2.Icons.zoom_in;
             this.btnZoomIn.Name = "btnZoomIn";
             this.btnZoomIn.UseVisualStyleBackColor = false;
-            this.btnZoomIn.Click += new System.EventHandler(this.btnZoomIn_Click);
             // 
             // btnZoomOut
             // 
@@ -146,7 +145,6 @@ namespace NAPS2.WinForms
             this.btnZoomOut.Image = global::NAPS2.Icons.zoom_out;
             this.btnZoomOut.Name = "btnZoomOut";
             this.btnZoomOut.UseVisualStyleBackColor = false;
-            this.btnZoomOut.Click += new System.EventHandler(this.btnZoomOut_Click);
             // 
             // btnZoomMouseCatcher
             // 
@@ -164,16 +162,6 @@ namespace NAPS2.WinForms
             this.thumbnailList1.ThumbnailRenderer = null;
             this.thumbnailList1.ThumbnailSize = new System.Drawing.Size(128, 128);
             this.thumbnailList1.UseCompatibleStateImageBehavior = false;
-            this.thumbnailList1.ItemActivate += new System.EventHandler(this.thumbnailList1_ItemActivate);
-            this.thumbnailList1.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.thumbnailList1_ItemDrag);
-            this.thumbnailList1.SelectedIndexChanged += new System.EventHandler(this.thumbnailList1_SelectedIndexChanged);
-            this.thumbnailList1.DragDrop += new System.Windows.Forms.DragEventHandler(this.thumbnailList1_DragDrop);
-            this.thumbnailList1.DragEnter += new System.Windows.Forms.DragEventHandler(this.thumbnailList1_DragEnter);
-            this.thumbnailList1.DragOver += new System.Windows.Forms.DragEventHandler(this.thumbnailList1_DragOver);
-            this.thumbnailList1.DragLeave += new System.EventHandler(this.thumbnailList1_DragLeave);
-            this.thumbnailList1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.thumbnailList1_KeyDown);
-            this.thumbnailList1.MouseLeave += new System.EventHandler(this.thumbnailList1_MouseLeave);
-            this.thumbnailList1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.thumbnailList1_MouseMove);
             // 
             // contextMenuStrip
             // 
@@ -193,7 +181,6 @@ namespace NAPS2.WinForms
             // 
             resources.ApplyResources(this.ctxView, "ctxView");
             this.ctxView.Name = "ctxView";
-            this.ctxView.Click += new System.EventHandler(this.ctxView_Click);
             // 
             // ctxSeparator1
             // 
@@ -204,19 +191,16 @@ namespace NAPS2.WinForms
             // 
             this.ctxSelectAll.Name = "ctxSelectAll";
             resources.ApplyResources(this.ctxSelectAll, "ctxSelectAll");
-            this.ctxSelectAll.Click += new System.EventHandler(this.ctxSelectAll_Click);
             // 
             // ctxCopy
             // 
             this.ctxCopy.Name = "ctxCopy";
             resources.ApplyResources(this.ctxCopy, "ctxCopy");
-            this.ctxCopy.Click += new System.EventHandler(this.ctxCopy_Click);
             // 
             // ctxPaste
             // 
             this.ctxPaste.Name = "ctxPaste";
             resources.ApplyResources(this.ctxPaste, "ctxPaste");
-            this.ctxPaste.Click += new System.EventHandler(this.ctxPaste_Click);
             // 
             // ctxSeparator2
             // 
@@ -227,7 +211,6 @@ namespace NAPS2.WinForms
             // 
             this.ctxDelete.Name = "ctxDelete";
             resources.ApplyResources(this.ctxDelete, "ctxDelete");
-            this.ctxDelete.Click += new System.EventHandler(this.ctxDelete_Click);
             // 
             // tStrip
             // 
@@ -257,7 +240,6 @@ namespace NAPS2.WinForms
             this.tStrip.Name = "tStrip";
             this.tStrip.ShowItemToolTips = false;
             this.tStrip.TabStop = true;
-            this.tStrip.DockChanged += new System.EventHandler(this.tStrip_DockChanged);
             // 
             // tsScan
             // 
@@ -664,7 +646,6 @@ namespace NAPS2.WinForms
             resources.ApplyResources(this.tsClear, "tsClear");
             this.tsClear.Name = "tsClear";
             this.tsClear.Padding = new System.Windows.Forms.Padding(10, 0, 10, 0);
-            this.tsClear.Click += new System.EventHandler(this.tsClear_Click);
             // 
             // toolStripSeparator3
             // 
@@ -684,7 +665,6 @@ namespace NAPS2.WinForms
             resources.ApplyResources(this.tsAbout, "tsAbout");
             this.tsAbout.Name = "tsAbout";
             this.tsAbout.Padding = new System.Windows.Forms.Padding(10, 0, 10, 0);
-            this.tsAbout.Click += new System.EventHandler(this.tsAbout_Click);
             // 
             // FDesktop
             // 

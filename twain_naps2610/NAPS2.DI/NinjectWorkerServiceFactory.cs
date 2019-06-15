@@ -24,7 +24,7 @@ namespace NAPS2.DI
             {
                 worker.Service.Init(RecoveryImage.RecoveryFolder.FullName);
             }
-            catch (EndpointNotFoundException)
+            catch (EndpointNotFoundException e)
             {
                 // Retry once
                 worker = kernel.Get<WorkerContext>();

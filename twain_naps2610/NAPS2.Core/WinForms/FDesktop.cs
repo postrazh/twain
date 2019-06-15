@@ -69,9 +69,6 @@ namespace NAPS2.WinForms
 
         private readonly ScannedImageList imageList = new ScannedImageList();
         private readonly AutoResetEvent renderThumbnailsWaitHandle = new AutoResetEvent(false);
-        private bool closed = false;
-        private LayoutManager layoutManager;
-        private bool disableSelectedIndexChangedEvent;
 
         #endregion
 
@@ -102,96 +99,13 @@ namespace NAPS2.WinForms
             InitializeComponent();
 
             notify.ParentForm = this;
-            Shown += FDesktop_Shown;
-            FormClosing += FDesktop_FormClosing;
-            Closed += FDesktop_Closed;
         }
 
         protected override void OnLoad(object sender, EventArgs eventArgs)
         {
-            PostInitializeComponent();
+
         }
 
-        /// <summary>
-        /// Runs when the form is first loaded and every time the language is changed.
-        /// </summary>
-        private void PostInitializeComponent()
-        {
-            foreach (var panel in toolStripContainer1.Controls.OfType<ToolStripPanel>())
-            {
-                ToolStripPanelSetStyle.Invoke(panel, new object[] { ControlStyles.Selectable, true });
-            }
-            imageList.ThumbnailRenderer = thumbnailRenderer;
-            thumbnailList1.ThumbnailRenderer = thumbnailRenderer;
-            int thumbnailSize = UserConfigManager.Config.ThumbnailSize;
-            thumbnailList1.ThumbnailSize = new Size(thumbnailSize, thumbnailSize);
-            SetThumbnailSpacing(thumbnailSize);
-
-            if (appConfigManager.Config.HideOcrButton)
-            {
-                tStrip.Items.Remove(tsOcr);
-            }
-            if (appConfigManager.Config.HideImportButton)
-            {
-                tStrip.Items.Remove(tsImport);
-            }
-            if (appConfigManager.Config.HideSavePdfButton)
-            {
-                tStrip.Items.Remove(tsdSavePDF);
-            }
-            if (appConfigManager.Config.HideSaveImagesButton)
-            {
-                tStrip.Items.Remove(tsdSaveImages);
-            }
-            if (appConfigManager.Config.HideEmailButton)
-            {
-                tStrip.Items.Remove(tsdEmailPDF);
-            }
-            if (appConfigManager.Config.HidePrintButton)
-            {
-                tStrip.Items.Remove(tsPrint);
-            }
-
-            LoadToolStripLocation();
-            RelayoutToolbar();
-            InitLanguageDropdown();
-            AssignKeyboardShortcuts();
-            UpdateScanButton();
-
-            layoutManager?.Deactivate();
-            btnZoomIn.Location = new Point(btnZoomIn.Location.X, thumbnailList1.Height - 33);
-            btnZoomOut.Location = new Point(btnZoomOut.Location.X, thumbnailList1.Height - 33);
-            btnZoomMouseCatcher.Location = new Point(btnZoomMouseCatcher.Location.X, thumbnailList1.Height - 33);
-            layoutManager = new LayoutManager(this)
-                   .Bind(btnZoomIn, btnZoomOut, btnZoomMouseCatcher)
-                       .BottomTo(() => thumbnailList1.Height)
-                   .Activate();
-
-            thumbnailList1.MouseWheel += thumbnailList1_MouseWheel;
-            thumbnailList1.SizeChanged += (sender, args) => layoutManager.UpdateLayout();
-        }
-
-        private void InitLanguageDropdown()
-        {
-            // Read a list of languages from the Languages.resx file
-            var resourceManager = LanguageNames.ResourceManager;
-            var resourceSet = resourceManager.GetResourceSet(CultureInfo.InvariantCulture, true, true);
-            foreach (DictionaryEntry entry in resourceSet.Cast<DictionaryEntry>().OrderBy(x => x.Value))
-            {
-                var langCode = ((string)entry.Key).Replace("_", "-");
-                var langName = (string)entry.Value;
-
-                // Only include those languages for which localized resources exist
-                string localizedResourcesPath =
-                    Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", langCode,
-                        "NAPS2.Core.resources.dll");
-                if (langCode == "en" || File.Exists(localizedResourcesPath))
-                {
-                    var button = new ToolStripMenuItem(langName, null, (sender, args) => SetCulture(langCode));
-                    toolStripDropDownButton1.DropDownItems.Add(button);
-                }
-            }
-        }
 
         private void RelayoutToolbar()
         {
@@ -267,201 +181,12 @@ namespace NAPS2.WinForms
             }
         }
 
-        private void SetCulture(string cultureId)
-        {
-            SaveToolStripLocation();
-            UserConfigManager.Config.Culture = cultureId;
-            UserConfigManager.Save();
-            cultureInitializer.InitCulture(Thread.CurrentThread);
-
-            // Update localized values
-            // Since all forms are opened modally and this is the root form, it should be the only one that needs to be updated live
-            SaveFormState = false;
-            Controls.Clear();
-            UpdateRTL();
-            InitializeComponent();
-            PostInitializeComponent();
-            AddThumbnails();
-            notify.Rebuild();
-            Focus();
-            WindowState = FormWindowState.Normal;
-            DoRestoreFormState();
-            SaveFormState = true;
-        }
-
-        private async void FDesktop_Shown(object sender, EventArgs e)
-        {
-            UpdateToolbar();
-
-            // Receive messages from other processes
-            Pipes.StartServer(msg =>
-            {
-                if (msg.StartsWith(Pipes.MSG_SCAN_WITH_DEVICE, StringComparison.InvariantCulture))
-                {
-                    SafeInvoke(async () => await ScanWithDevice(msg.Substring(Pipes.MSG_SCAN_WITH_DEVICE.Length)));
-                }
-                if (msg.Equals(Pipes.MSG_ACTIVATE))
-                {
-                    SafeInvoke(() =>
-                    {
-                        var form = Application.OpenForms.Cast<Form>().Last();
-                        if (form.WindowState == FormWindowState.Minimized)
-                        {
-                            Win32.ShowWindow(form.Handle, Win32.ShowWindowCommands.Restore);
-                        }
-                        form.Activate();
-                    });
-                }
-            });
-
-            // If configured (e.g. by a business), show a customizable message box on application startup.
-            var appConfig = appConfigManager.Config;
-            if (!string.IsNullOrWhiteSpace(appConfig.StartupMessageText))
-            {
-                MessageBox.Show(appConfig.StartupMessageText, appConfig.StartupMessageTitle, MessageBoxButtons.OK,
-                    appConfig.StartupMessageIcon);
-            }
-
-            // Allow scanned images to be recovered in case of an unexpected close
-            recoveryManager.RecoverScannedImages(ReceiveScannedImage());
-
-            new Thread(RenderThumbnails).Start();
-
-            // If NAPS2 was started by the scanner button, do the appropriate actions automatically
-            await RunStillImageEvents();
-
-            // Show a donation prompt after a month of use
-            if (userConfigManager.Config.FirstRunDate == null)
-            {
-                userConfigManager.Config.FirstRunDate = DateTime.Now;
-                userConfigManager.Save();
-            }
-#if !INSTALLER_MSI
-            else if (!appConfigManager.Config.HideDonateButton &&
-                userConfigManager.Config.LastDonatePromptDate == null &&
-                DateTime.Now - userConfigManager.Config.FirstRunDate > TimeSpan.FromDays(30))
-            {
-                userConfigManager.Config.LastDonatePromptDate = DateTime.Now;
-                userConfigManager.Save();
-                notify.DonatePrompt();
-            }
-
-            if (userConfigManager.Config.CheckForUpdates &&
-                (userConfigManager.Config.LastUpdateCheckDate == null ||
-                 userConfigManager.Config.LastUpdateCheckDate < DateTime.Now - updateChecker.CheckInterval))
-            {
-                updateChecker.CheckForUpdates().ContinueWith(task =>
-                {
-                    if (task.IsFaulted)
-                    {
-                        Log.ErrorException("Error checking for updates", task.Exception);
-                    }
-                    else
-                    {
-                        userConfigManager.Config.LastUpdateCheckDate = DateTime.Now;
-                        userConfigManager.Save();
-                    }
-                    var update = task.Result;
-                    if (update != null)
-                    {
-                        SafeInvoke(() => notify.UpdateAvailable(updateChecker, update));
-                    }
-                }).AssertNoAwait();
-            }
-#endif
-        }
 
         #endregion
 
-        #region Cleanup
-
-        private void FDesktop_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (closed) return;
-
-            if (operationProgress.ActiveOperations.Any())
-            {
-                if (e.CloseReason == CloseReason.UserClosing)
-                {
-                    if (operationProgress.ActiveOperations.Any(x => !x.SkipExitPrompt))
-                    {
-                        var result = MessageBox.Show(MiscResources.ExitWithActiveOperations, MiscResources.ActiveOperations,
-                            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-                        if (result != DialogResult.Yes)
-                        {
-                            e.Cancel = true;
-                        }
-                    }
-                }
-                else
-                {
-                    RecoveryImage.DisableRecoveryCleanup = true;
-                }
-            }
-            else if (changeTracker.HasUnsavedChanges)
-            {
-                if (e.CloseReason == CloseReason.UserClosing && !RecoveryImage.DisableRecoveryCleanup)
-                {
-                    var result = MessageBox.Show(MiscResources.ExitWithUnsavedChanges, MiscResources.UnsavedChanges,
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-                    if (result == DialogResult.Yes)
-                    {
-                        changeTracker.Clear();
-                    }
-                    else
-                    {
-                        e.Cancel = true;
-                    }
-                }
-                else
-                {
-                    RecoveryImage.DisableRecoveryCleanup = true;
-                }
-            }
-
-            if (!e.Cancel && operationProgress.ActiveOperations.Any())
-            {
-                operationProgress.ActiveOperations.ForEach(op => op.Cancel());
-                e.Cancel = true;
-                Hide();
-                ShowInTaskbar = false;
-                Task.Factory.StartNew(() =>
-                {
-                    var timeoutCts = new CancellationTokenSource();
-                    timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
-                    try
-                    {
-                        operationProgress.ActiveOperations.ForEach(op => op.Wait(timeoutCts.Token));
-                    }
-                    catch (OperationCanceledException)
-                    {
-                    }
-                    closed = true;
-                    SafeInvoke(Close);
-                });
-            }
-        }
-
-        private void FDesktop_Closed(object sender, EventArgs e)
-        {
-            SaveToolStripLocation();
-            Pipes.KillServer();
-            imageList.Delete(Enumerable.Range(0, imageList.Images.Count));
-            closed = true;
-            renderThumbnailsWaitHandle.Set();
-        }
-
-        #endregion
 
         #region Scanning and Still Image
 
-        private async Task RunStillImageEvents()
-        {
-            if (stillImage.ShouldScan)
-            {
-                await ScanWithDevice(stillImage.DeviceID);
-            }
-        }
 
         private async Task ScanWithDevice(string deviceID)
         {
@@ -566,14 +291,11 @@ namespace NAPS2.WinForms
             get => thumbnailList1.SelectedIndices.Cast<int>();
             set
             {
-                disableSelectedIndexChangedEvent = true;
                 thumbnailList1.SelectedIndices.Clear();
                 foreach (int i in value)
                 {
                     thumbnailList1.SelectedIndices.Add(i);
                 }
-                disableSelectedIndexChangedEvent = false;
-                thumbnailList1_SelectedIndexChanged(thumbnailList1, new EventArgs());
             }
         }
 
@@ -608,7 +330,6 @@ namespace NAPS2.WinForms
                         scannedImage.MovedTo(index);
                         scannedImage.ThumbnailChanged += ImageThumbnailChanged;
                         scannedImage.ThumbnailInvalidated += ImageThumbnailInvalidated;
-                        AddThumbnails();
                         last = scannedImage;
                     }
                     changeTracker.Made();
@@ -616,12 +337,6 @@ namespace NAPS2.WinForms
                 // Trigger thumbnail rendering just in case the received image is out of date
                 renderThumbnailsWaitHandle.Set();
             };
-        }
-
-        private void AddThumbnails()
-        {
-            thumbnailList1.AddedImages(imageList.Images);
-            UpdateToolbar();
         }
 
         private void DeleteThumbnails()
@@ -1158,34 +873,6 @@ namespace NAPS2.WinForms
 
         #region Event Handlers - Misc
 
-        private void thumbnailList1_ItemActivate(object sender, EventArgs e)
-        {
-            PreviewImage();
-        }
-
-        private void thumbnailList1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!disableSelectedIndexChangedEvent)
-            {
-                UpdateToolbar();
-            }
-        }
-
-        private void thumbnailList1_MouseMove(object sender, MouseEventArgs e)
-        {
-            Cursor = thumbnailList1.GetItemAt(e.X, e.Y) == null ? Cursors.Default : Cursors.Hand;
-        }
-
-        private void thumbnailList1_MouseLeave(object sender, EventArgs e)
-        {
-            Cursor = Cursors.Default;
-        }
-
-        private void tStrip_DockChanged(object sender, EventArgs e)
-        {
-            RelayoutToolbar();
-        }
-
         #endregion
 
         #region Event Handlers - Toolbar
@@ -1364,15 +1051,6 @@ namespace NAPS2.WinForms
             Delete();
         }
 
-        private void tsClear_Click(object sender, EventArgs e)
-        {
-            Clear();
-        }
-
-        private void tsAbout_Click(object sender, EventArgs e)
-        {
-            FormFactory.Create<FAbout>().ShowDialog();
-        }
 
         #endregion
 
@@ -1640,30 +1318,6 @@ namespace NAPS2.WinForms
             }
         }
 
-        private void ctxSelectAll_Click(object sender, EventArgs e)
-        {
-            SelectAll();
-        }
-
-        private void ctxView_Click(object sender, EventArgs e)
-        {
-            PreviewImage();
-        }
-
-        private void ctxCopy_Click(object sender, EventArgs e)
-        {
-            CopyImages();
-        }
-
-        private void ctxPaste_Click(object sender, EventArgs e)
-        {
-            PasteImages();
-        }
-
-        private void ctxDelete_Click(object sender, EventArgs e)
-        {
-            Delete();
-        }
 
         #endregion
 
@@ -1848,54 +1502,6 @@ namespace NAPS2.WinForms
             Win32.SendMessage(list.Handle, LVM_SETICONSPACING, IntPtr.Zero, (IntPtr)(int)(((ushort)hspacing) | (uint)(vspacing << 16)));
         }
 
-        private void RenderThumbnails()
-        {
-            bool useWorker = PlatformCompat.Runtime.UseWorker;
-            var worker = useWorker ? workerServiceFactory.Create() : null;
-            var fallback = new ExpFallback(100, 60 * 1000);
-            while (!closed)
-            {
-                try
-                {
-                    ScannedImage next;
-                    while ((next = GetNextThumbnailToRender()) != null)
-                    {
-                        if (!ThumbnailStillNeedsRendering(next))
-                        {
-                            continue;
-                        }
-                        using (var snapshot = next.Preserve())
-                        {
-                            var thumb = worker != null
-                                ? new Bitmap(new MemoryStream(worker.Service.RenderThumbnail(snapshot, thumbnailList1.ThumbnailSize.Height)))
-                                : thumbnailRenderer.RenderThumbnail(snapshot, thumbnailList1.ThumbnailSize.Height).Result;
-
-                            if (!ThumbnailStillNeedsRendering(next))
-                            {
-                                continue;
-                            }
-
-                            next.SetThumbnail(thumb, snapshot.TransformState);
-                        }
-                        fallback.Reset();
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.ErrorException("Error rendering thumbnails", e);
-                    if (worker != null)
-                    {
-                        worker.Dispose();
-                        worker = workerServiceFactory.Create();
-                    }
-                    Thread.Sleep(fallback.Value);
-                    fallback.Increase();
-                    continue;
-                }
-                renderThumbnailsWaitHandle.WaitOne();
-            }
-        }
-
         private bool ThumbnailStillNeedsRendering(ScannedImage next)
         {
             lock (next)
@@ -1905,180 +1511,7 @@ namespace NAPS2.WinForms
             }
         }
 
-        private ScannedImage GetNextThumbnailToRender()
-        {
-            List<ScannedImage> listCopy;
-            lock (imageList)
-            {
-                listCopy = imageList.Images.ToList();
-            }
-            // Look for images without thumbnails
-            foreach (var img in listCopy)
-            {
-                if (img.GetThumbnail() == null)
-                {
-                    return img;
-                }
-            }
-            // Look for images with dirty thumbnails
-            foreach (var img in listCopy)
-            {
-                if (img.IsThumbnailDirty)
-                {
-                    return img;
-                }
-            }
-            // Look for images with mis-sized thumbnails
-            foreach (var img in listCopy)
-            {
-                if (img.GetThumbnail()?.Size != thumbnailList1.ThumbnailSize)
-                {
-                    return img;
-                }
-            }
-            // Nothing to render
-            return null;
-        }
-
-        private void btnZoomOut_Click(object sender, EventArgs e)
-        {
-            StepThumbnailSize(-1);
-        }
-
-        private void btnZoomIn_Click(object sender, EventArgs e)
-        {
-            StepThumbnailSize(1);
-        }
-
         #endregion
 
-        #region Drag/Drop
-
-        private async void thumbnailList1_ItemDrag(object sender, ItemDragEventArgs e)
-        {
-            // Provide drag data
-            if (SelectedIndices.Any())
-            {
-                var ido = await GetDataObjectForImages(SelectedImages, false);
-                DoDragDrop(ido, DragDropEffects.Move | DragDropEffects.Copy);
-            }
-        }
-
-        private void thumbnailList1_DragEnter(object sender, DragEventArgs e)
-        {
-            // Determine if drop data is compatible
-            try
-            {
-                if (e.Data.GetDataPresent(typeof(DirectImageTransfer).FullName))
-                {
-                    var data = (DirectImageTransfer)e.Data.GetData(typeof(DirectImageTransfer).FullName);
-                    e.Effect = data.ProcessID == Process.GetCurrentProcess().Id
-                        ? DragDropEffects.Move
-                        : DragDropEffects.Copy;
-                }
-                else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                {
-                    e.Effect = DragDropEffects.Copy;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException("Error receiving drag/drop", ex);
-            }
-        }
-
-        private void thumbnailList1_DragDrop(object sender, DragEventArgs e)
-        {
-            // Receive drop data
-            if (e.Data.GetDataPresent(typeof(DirectImageTransfer).FullName))
-            {
-                var data = (DirectImageTransfer)e.Data.GetData(typeof(DirectImageTransfer).FullName);
-                if (data.ProcessID == Process.GetCurrentProcess().Id)
-                {
-                    DragMoveImages(e);
-                }
-                else
-                {
-                    ImportDirect(data, false);
-                }
-            }
-            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var data = (string[])e.Data.GetData(DataFormats.FileDrop);
-                ImportFiles(data);
-            }
-            thumbnailList1.InsertionMark.Index = -1;
-        }
-
-        private void thumbnailList1_DragLeave(object sender, EventArgs e)
-        {
-            thumbnailList1.InsertionMark.Index = -1;
-        }
-
-        private void DragMoveImages(DragEventArgs e)
-        {
-            if (!SelectedIndices.Any())
-            {
-                return;
-            }
-            int index = GetDragIndex(e);
-            if (index != -1)
-            {
-                UpdateThumbnails(imageList.MoveTo(SelectedIndices, index), true, true);
-                changeTracker.Made();
-            }
-        }
-
-        private void thumbnailList1_DragOver(object sender, DragEventArgs e)
-        {
-            if (e.Effect == DragDropEffects.Move)
-            {
-                var index = GetDragIndex(e);
-                if (index == imageList.Images.Count)
-                {
-                    thumbnailList1.InsertionMark.Index = index - 1;
-                    thumbnailList1.InsertionMark.AppearsAfterItem = true;
-                }
-                else
-                {
-                    thumbnailList1.InsertionMark.Index = index;
-                    thumbnailList1.InsertionMark.AppearsAfterItem = false;
-                }
-            }
-        }
-
-        private int GetDragIndex(DragEventArgs e)
-        {
-            Point cp = thumbnailList1.PointToClient(new Point(e.X, e.Y));
-            ListViewItem dragToItem = thumbnailList1.GetItemAt(cp.X, cp.Y);
-            if (dragToItem == null)
-            {
-                var items = thumbnailList1.Items.Cast<ListViewItem>().ToList();
-                var minY = items.Select(x => x.Bounds.Top).Min();
-                var maxY = items.Select(x => x.Bounds.Bottom).Max();
-                if (cp.Y < minY)
-                {
-                    cp.Y = minY;
-                }
-                if (cp.Y > maxY)
-                {
-                    cp.Y = maxY;
-                }
-                var row = items.Where(x => x.Bounds.Top <= cp.Y && x.Bounds.Bottom >= cp.Y).OrderBy(x => x.Bounds.X).ToList();
-                dragToItem = row.FirstOrDefault(x => x.Bounds.Right >= cp.X) ?? row.LastOrDefault();
-            }
-            if (dragToItem == null)
-            {
-                return -1;
-            }
-            int dragToIndex = dragToItem.ImageIndex;
-            if (cp.X > (dragToItem.Bounds.X + dragToItem.Bounds.Width / 2))
-            {
-                dragToIndex++;
-            }
-            return dragToIndex;
-        }
-
-        #endregion
     }
 }
