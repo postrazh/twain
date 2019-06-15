@@ -40,26 +40,11 @@ namespace NAPS2.WinForms
     {
         #region Dependencies
 
-        private readonly StringWrapper stringWrapper;
         private readonly AppConfigManager appConfigManager;
-        private readonly RecoveryManager recoveryManager;
-        private readonly OcrManager ocrManager;
         private readonly IProfileManager profileManager;
         private readonly IScanPerformer scanPerformer;
-        private readonly IScannedImagePrinter scannedImagePrinter;
-        private readonly ChangeTracker changeTracker;
-        private readonly StillImage stillImage;
-        private readonly IOperationFactory operationFactory;
-        private readonly IUserConfigManager userConfigManager;
-        private readonly KeyboardShortcutManager ksm;
-        private readonly ThumbnailRenderer thumbnailRenderer;
         private readonly WinFormsExportHelper exportHelper;
-        private readonly ScannedImageRenderer scannedImageRenderer;
         private readonly NotificationManager notify;
-        private readonly CultureInitializer cultureInitializer;
-        private readonly IWorkerServiceFactory workerServiceFactory;
-        private readonly IOperationProgress operationProgress;
-        private readonly UpdateChecker updateChecker;
 
         #endregion
 
@@ -70,28 +55,14 @@ namespace NAPS2.WinForms
 
         #endregion
 
-        public FDesktop(StringWrapper stringWrapper, AppConfigManager appConfigManager, RecoveryManager recoveryManager, OcrManager ocrManager, IProfileManager profileManager, IScanPerformer scanPerformer, IScannedImagePrinter scannedImagePrinter, ChangeTracker changeTracker, StillImage stillImage, IOperationFactory operationFactory, IUserConfigManager userConfigManager, KeyboardShortcutManager ksm, ThumbnailRenderer thumbnailRenderer, WinFormsExportHelper exportHelper, ScannedImageRenderer scannedImageRenderer, NotificationManager notify, CultureInitializer cultureInitializer, IWorkerServiceFactory workerServiceFactory, IOperationProgress operationProgress, UpdateChecker updateChecker)
+        public FDesktop(AppConfigManager appConfigManager, IProfileManager profileManager, IScanPerformer scanPerformer, 
+            WinFormsExportHelper exportHelper, NotificationManager notify)
         {
-            this.stringWrapper = stringWrapper;
             this.appConfigManager = appConfigManager;
-            this.recoveryManager = recoveryManager;
-            this.ocrManager = ocrManager;
             this.profileManager = profileManager;
             this.scanPerformer = scanPerformer;
-            this.scannedImagePrinter = scannedImagePrinter;
-            this.changeTracker = changeTracker;
-            this.stillImage = stillImage;
-            this.operationFactory = operationFactory;
-            this.userConfigManager = userConfigManager;
-            this.ksm = ksm;
-            this.thumbnailRenderer = thumbnailRenderer;
             this.exportHelper = exportHelper;
-            this.scannedImageRenderer = scannedImageRenderer;
             this.notify = notify;
-            this.cultureInitializer = cultureInitializer;
-            this.workerServiceFactory = workerServiceFactory;
-            this.operationProgress = operationProgress;
-            this.updateChecker = updateChecker;
             InitializeComponent();
 
             notify.ParentForm = this;
