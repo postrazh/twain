@@ -40,6 +40,8 @@ namespace NAPS2.WinForms
     {
         #region Dependencies
 
+        private readonly IScanDriverFactory driverFactory;
+
         private readonly AppConfigManager appConfigManager;
         private readonly IProfileManager profileManager;
         private readonly IScanPerformer scanPerformer;
@@ -55,9 +57,11 @@ namespace NAPS2.WinForms
 
         #endregion
 
-        public FDesktop(AppConfigManager appConfigManager, IProfileManager profileManager, IScanPerformer scanPerformer, 
+        public FDesktop(IScanDriverFactory driverFactory, AppConfigManager appConfigManager, IProfileManager profileManager, IScanPerformer scanPerformer, 
             WinFormsExportHelper exportHelper, NotificationManager notify)
         {
+            this.driverFactory = driverFactory;
+
             this.appConfigManager = appConfigManager;
             this.profileManager = profileManager;
             this.scanPerformer = scanPerformer;
@@ -66,6 +70,8 @@ namespace NAPS2.WinForms
             InitializeComponent();
 
             notify.ParentForm = this;
+
+            
         }
 
 
@@ -181,5 +187,37 @@ namespace NAPS2.WinForms
            SavePDF(imageList.Images);
         }
 
+        ScanProfile defaultScanProfile = null;
+        ScanParams defaultScanParams = null;
+
+        private async void btnConnect_Click(object sender, EventArgs e)
+        {
+            defaultScanProfile = new ScanProfile { Version = ScanProfile.CURRENT_VERSION };
+            defaultScanProfile.DriverName = "twain";
+
+            defaultScanParams = new ScanParams();
+
+            var driver = driverFactory.Create(defaultScanProfile.DriverName);
+            driver.ScanProfile = defaultScanProfile;
+            driver.ScanParams = defaultScanParams;
+            var deviceList = driver.GetDeviceList();
+            if (!deviceList.Any())
+            {
+                MessageBox.Show("There is no connected device!");
+                return;
+            }
+            defaultScanProfile.Device = deviceList[0];
+     
+        }
+
+        private async void btnScan_Click(object sender, EventArgs e)
+        {
+            if (defaultScanProfile == null)
+            {
+                MessageBox.Show("There is no connected device!");
+                return;
+            }
+            await scanPerformer.PerformScan(defaultScanProfile, defaultScanParams, this, notify, ReceiveScannedImage());
+        }
     }
 }

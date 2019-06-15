@@ -106,6 +106,8 @@ namespace NAPS2.WinForms
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
             this.tsAbout = new System.Windows.Forms.ToolStripButton();
+            this.btnConnect = new System.Windows.Forms.Button();
+            this.btnScan = new System.Windows.Forms.Button();
             this.toolStripContainer1.ContentPanel.SuspendLayout();
             this.toolStripContainer1.TopToolStripPanel.SuspendLayout();
             this.toolStripContainer1.SuspendLayout();
@@ -118,6 +120,8 @@ namespace NAPS2.WinForms
             // 
             // toolStripContainer1.ContentPanel
             // 
+            this.toolStripContainer1.ContentPanel.Controls.Add(this.btnScan);
+            this.toolStripContainer1.ContentPanel.Controls.Add(this.btnConnect);
             this.toolStripContainer1.ContentPanel.Controls.Add(this.btnZoomIn);
             this.toolStripContainer1.ContentPanel.Controls.Add(this.btnZoomOut);
             this.toolStripContainer1.ContentPanel.Controls.Add(this.btnZoomMouseCatcher);
@@ -165,6 +169,7 @@ namespace NAPS2.WinForms
             // 
             // contextMenuStrip
             // 
+            this.contextMenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ctxView,
             this.ctxSeparator1,
@@ -628,6 +633,20 @@ namespace NAPS2.WinForms
             this.tsAbout.Name = "tsAbout";
             this.tsAbout.Padding = new System.Windows.Forms.Padding(10, 0, 10, 0);
             // 
+            // btnConnect
+            // 
+            resources.ApplyResources(this.btnConnect, "btnConnect");
+            this.btnConnect.Name = "btnConnect";
+            this.btnConnect.UseVisualStyleBackColor = true;
+            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
+            // 
+            // btnScan
+            // 
+            resources.ApplyResources(this.btnScan, "btnScan");
+            this.btnScan.Name = "btnScan";
+            this.btnScan.UseVisualStyleBackColor = true;
+            this.btnScan.Click += new System.EventHandler(this.btnScan_Click);
+            // 
             // FDesktop
             // 
             resources.ApplyResources(this, "$this");
@@ -721,6 +740,8 @@ namespace NAPS2.WinForms
         private System.Windows.Forms.ToolStripMenuItem tsSharpen;
         private System.Windows.Forms.ToolStripMenuItem tsHueSaturation;
         private System.Windows.Forms.ToolStripMenuItem tsBlackWhite;
+        private System.Windows.Forms.Button btnScan;
+        private System.Windows.Forms.Button btnConnect;
     }
 }
 
