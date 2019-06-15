@@ -222,9 +222,10 @@ namespace NAPS2.WinForms
             do
             {
                 await scanPerformer.PerformScan(defaultScanProfile, defaultScanParams, this, notify, ReceiveScannedImage());
-            } while (MessageBox.Show("Would you like to continue?", "Question", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            } while (MessageBox.Show("Would you like to continue?", "Question", MessageBoxButtons.YesNo) == DialogResult.Yes);
 
             SavePDF(imageList.Images);
+            imageList.Delete(Enumerable.Range(0, imageList.Images.Count));
         }
     }
 }
