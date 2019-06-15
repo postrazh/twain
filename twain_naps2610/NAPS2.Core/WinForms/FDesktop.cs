@@ -53,7 +53,6 @@ namespace NAPS2.WinForms
         #region State Fields
 
         private readonly ScannedImageList imageList = new ScannedImageList();
-        private readonly AutoResetEvent renderThumbnailsWaitHandle = new AutoResetEvent(false);
 
         #endregion
 

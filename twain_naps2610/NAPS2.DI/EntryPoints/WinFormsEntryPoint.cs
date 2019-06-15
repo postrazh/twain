@@ -27,8 +27,8 @@ namespace NAPS2.DI.EntryPoints
 
             // Parse the command-line arguments and see if we're doing something other than displaying the main form
             var lifecycle = kernel.Get<Lifecycle>();
-            lifecycle.ParseArgs(args);
-            lifecycle.ExitIfRedundant();
+            //lifecycle.ParseArgs(args);
+            //lifecycle.ExitIfRedundant();
 
             // Start a pending worker process
             WorkerManager.Init();
