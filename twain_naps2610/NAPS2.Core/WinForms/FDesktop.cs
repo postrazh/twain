@@ -40,8 +40,6 @@ namespace NAPS2.WinForms
     {
         #region Dependencies
 
-        private static readonly MethodInfo ToolStripPanelSetStyle = typeof(ToolStripPanel).GetMethod("SetStyle", BindingFlags.Instance | BindingFlags.NonPublic);
-
         private readonly StringWrapper stringWrapper;
         private readonly AppConfigManager appConfigManager;
         private readonly RecoveryManager recoveryManager;
@@ -72,8 +70,6 @@ namespace NAPS2.WinForms
 
         #endregion
 
-        #region Initialization and Culture
-
         public FDesktop(StringWrapper stringWrapper, AppConfigManager appConfigManager, RecoveryManager recoveryManager, OcrManager ocrManager, IProfileManager profileManager, IScanPerformer scanPerformer, IScannedImagePrinter scannedImagePrinter, ChangeTracker changeTracker, StillImage stillImage, IOperationFactory operationFactory, IUserConfigManager userConfigManager, KeyboardShortcutManager ksm, ThumbnailRenderer thumbnailRenderer, WinFormsExportHelper exportHelper, ScannedImageRenderer scannedImageRenderer, NotificationManager notify, CultureInitializer cultureInitializer, IWorkerServiceFactory workerServiceFactory, IOperationProgress operationProgress, UpdateChecker updateChecker)
         {
             this.stringWrapper = stringWrapper;
@@ -101,10 +97,6 @@ namespace NAPS2.WinForms
             notify.ParentForm = this;
         }
 
-        #endregion
-
-
-        #region Scanning and Still Image
 
         private async Task ScanDefault()
         {
@@ -142,24 +134,6 @@ namespace NAPS2.WinForms
             Activate();
         }
 
-        #endregion
-
-        #region Images and Thumbnails
-
-        private IEnumerable<int> SelectedIndices
-        {
-            get => thumbnailList1.SelectedIndices.Cast<int>();
-            set
-            {
-                thumbnailList1.SelectedIndices.Clear();
-                foreach (int i in value)
-                {
-                    thumbnailList1.SelectedIndices.Add(i);
-                }
-            }
-        }
-
-        private IEnumerable<ScannedImage> SelectedImages => imageList.Images.ElementsAt(SelectedIndices);
 
         /// <summary>
         /// Constructs a receiver for scanned images.
@@ -190,16 +164,9 @@ namespace NAPS2.WinForms
                         scannedImage.MovedTo(index);
                         last = scannedImage;
                     }
-                    changeTracker.Made();
                 });
-                // Trigger thumbnail rendering just in case the received image is out of date
-                renderThumbnailsWaitHandle.Set();
             };
         }
-
-        #endregion
-
-        #region Toolbar
 
 
         private void UpdateScanButton()
@@ -253,8 +220,6 @@ namespace NAPS2.WinForms
         }
 
 
-        #endregion
-
 
         private async void SavePDF(List<ScannedImage> images)
         {
@@ -270,8 +235,6 @@ namespace NAPS2.WinForms
             }
         }
 
-
-        #region Event Handlers - Toolbar
 
         private async void tsScan_ButtonClick(object sender, EventArgs e)
         {
@@ -292,30 +255,8 @@ namespace NAPS2.WinForms
         
         private void tsdSavePDF_ButtonClick(object sender, EventArgs e)
         {
-            if (appConfigManager.Config.HideSavePdfButton)
-            {
-                return;
-            }
-
-            var action = appConfigManager.Config.SaveButtonDefaultAction;
-
-            if (action == SaveButtonDefaultAction.AlwaysPrompt
-                || action == SaveButtonDefaultAction.PromptIfSelected && SelectedIndices.Any())
-            {
-                tsdSavePDF.ShowDropDown();
-            }
-            else if (action == SaveButtonDefaultAction.SaveSelected && SelectedIndices.Any())
-            {
-                SavePDF(SelectedImages.ToList());
-            }
-            else
-            {
-                SavePDF(imageList.Images);
-            }
+           SavePDF(imageList.Images);
         }
-
-        #endregion
-   
 
     }
 }
