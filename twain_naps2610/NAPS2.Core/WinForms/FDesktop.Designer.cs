@@ -264,7 +264,6 @@ namespace NAPS2.WinForms
             this.tsBatchScan.Image = global::NAPS2.Icons.application_cascade;
             resources.ApplyResources(this.tsBatchScan, "tsBatchScan");
             this.tsBatchScan.Name = "tsBatchScan";
-            this.tsBatchScan.Click += new System.EventHandler(this.tsBatchScan_Click);
             // 
             // tsProfiles
             // 
@@ -279,7 +278,6 @@ namespace NAPS2.WinForms
             resources.ApplyResources(this.tsOcr, "tsOcr");
             this.tsOcr.Name = "tsOcr";
             this.tsOcr.Padding = new System.Windows.Forms.Padding(10, 0, 10, 0);
-            this.tsOcr.Click += new System.EventHandler(this.tsOcr_Click);
             // 
             // tsImport
             // 

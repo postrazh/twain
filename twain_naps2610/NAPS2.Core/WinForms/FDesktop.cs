@@ -201,39 +201,6 @@ namespace NAPS2.WinForms
 
         #region Toolbar
 
-        private void UpdateToolbar()
-        {
-            // "All" dropdown items
-            tsSavePDFAll.Text = tsSaveImagesAll.Text = tsEmailPDFAll.Text = tsReverseAll.Text =
-                string.Format(MiscResources.AllCount, imageList.Images.Count);
-            tsSavePDFAll.Enabled = tsSaveImagesAll.Enabled = tsEmailPDFAll.Enabled = tsReverseAll.Enabled =
-                imageList.Images.Any();
-
-            // "Selected" dropdown items
-            tsSavePDFSelected.Text = tsSaveImagesSelected.Text = tsEmailPDFSelected.Text = tsReverseSelected.Text =
-                string.Format(MiscResources.SelectedCount, SelectedIndices.Count());
-            tsSavePDFSelected.Enabled = tsSaveImagesSelected.Enabled = tsEmailPDFSelected.Enabled = tsReverseSelected.Enabled =
-                SelectedIndices.Any();
-
-            // Top-level toolbar actions
-            tsdImage.Enabled = tsdRotate.Enabled = tsMove.Enabled = tsDelete.Enabled = SelectedIndices.Any();
-            tsdReorder.Enabled = tsdSavePDF.Enabled = tsdSaveImages.Enabled = tsdEmailPDF.Enabled = tsPrint.Enabled = tsClear.Enabled = imageList.Images.Any();
-
-            // Context-menu actions
-            ctxView.Visible = ctxCopy.Visible = ctxDelete.Visible = ctxSeparator1.Visible = ctxSeparator2.Visible = SelectedIndices.Any();
-            ctxSelectAll.Enabled = imageList.Images.Any();
-
-            // Other
-            btnZoomIn.Enabled = imageList.Images.Any() && UserConfigManager.Config.ThumbnailSize < ThumbnailRenderer.MAX_SIZE;
-            btnZoomOut.Enabled = imageList.Images.Any() && UserConfigManager.Config.ThumbnailSize > ThumbnailRenderer.MIN_SIZE;
-            tsNewProfile.Enabled = !(appConfigManager.Config.NoUserProfiles && profileManager.Profiles.Any(x => x.IsLocked));
-
-            if (PlatformCompat.Runtime.RefreshListViewAfterChange)
-            {
-                thumbnailList1.Size = new Size(thumbnailList1.Width - 1, thumbnailList1.Height - 1);
-                thumbnailList1.Size = new Size(thumbnailList1.Width + 1, thumbnailList1.Height + 1);
-            }
-        }
 
         private void UpdateScanButton()
         {
@@ -277,32 +244,6 @@ namespace NAPS2.WinForms
             }
         }
 
-        private void SaveToolStripLocation()
-        {
-            UserConfigManager.Config.DesktopToolStripDock = tStrip.Parent.Dock;
-            UserConfigManager.Save();
-        }
-
-        private void LoadToolStripLocation()
-        {
-            var dock = UserConfigManager.Config.DesktopToolStripDock;
-            if (dock != DockStyle.None)
-            {
-                var panel = toolStripContainer1.Controls.OfType<ToolStripPanel>().FirstOrDefault(x => x.Dock == dock);
-                if (panel != null)
-                {
-                    tStrip.Parent = panel;
-                }
-            }
-            tStrip.Parent.TabStop = true;
-        }
-
-        #endregion
-
-        #region Actions
-
-       
-
         private void ShowProfilesForm()
         {
             var form = FormFactory.Create<FProfiles>();
@@ -314,7 +255,6 @@ namespace NAPS2.WinForms
 
         #endregion
 
-        #region Actions - Save/Email/Import
 
         private async void SavePDF(List<ScannedImage> images)
         {
@@ -330,16 +270,6 @@ namespace NAPS2.WinForms
             }
         }
 
-        #endregion
-
-        #region Keyboard Shortcuts
-
-       
-        #endregion
-
-        #region Event Handlers - Misc
-
-        #endregion
 
         #region Event Handlers - Toolbar
 
@@ -353,60 +283,13 @@ namespace NAPS2.WinForms
             await ScanWithNewProfile();
         }
 
-        private void tsBatchScan_Click(object sender, EventArgs e)
-        {
-            var form = FormFactory.Create<FBatchScan>();
-            form.ImageCallback = ReceiveScannedImage();
-            form.ShowDialog();
-            UpdateScanButton();
-        }
 
         private void tsProfiles_Click(object sender, EventArgs e)
         {
             ShowProfilesForm();
         }
 
-        private void tsOcr_Click(object sender, EventArgs e)
-        {
-            if (appConfigManager.Config.HideOcrButton)
-            {
-                return;
-            }
-
-            if (ocrManager.MustUpgrade && !appConfigManager.Config.NoUpdatePrompt)
-            {
-                // Re-download a fixed version on Windows XP if needed
-                MessageBox.Show(MiscResources.OcrUpdateAvailable, "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                var progressForm = FormFactory.Create<FDownloadProgress>();
-                progressForm.QueueFile(ocrManager.EngineToInstall.Component);
-                progressForm.ShowDialog();
-            }
-
-            if (ocrManager.MustInstallPackage)
-            {
-                const string packages = "\ntesseract-ocr";
-                MessageBox.Show(MiscResources.TesseractNotAvailable + packages, MiscResources.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            else if (ocrManager.IsReady)
-            {
-                if (ocrManager.CanUpgrade && !appConfigManager.Config.NoUpdatePrompt)
-                {
-                    MessageBox.Show(MiscResources.OcrUpdateAvailable, "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    FormFactory.Create<FOcrLanguageDownload>().ShowDialog();
-                }
-                FormFactory.Create<FOcrSetup>().ShowDialog();
-            }
-            else
-            {
-                FormFactory.Create<FOcrLanguageDownload>().ShowDialog();
-                if (ocrManager.IsReady)
-                {
-                    FormFactory.Create<FOcrSetup>().ShowDialog();
-                }
-            }
-        }
-
-
+        
         private void tsdSavePDF_ButtonClick(object sender, EventArgs e)
         {
             if (appConfigManager.Config.HideSavePdfButton)
