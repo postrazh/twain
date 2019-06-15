@@ -128,8 +128,6 @@ namespace NAPS2.WinForms
             profileManager.DefaultProfile = editSettingsForm.ScanProfile;
             profileManager.Save();
 
-            UpdateScanButton();
-
             await scanPerformer.PerformScan(editSettingsForm.ScanProfile, new ScanParams(), this, notify, ReceiveScannedImage());
             Activate();
         }
@@ -168,58 +166,12 @@ namespace NAPS2.WinForms
             };
         }
 
-
-        private void UpdateScanButton()
-        {
-            const int staticButtonCount = 2;
-
-            // Clean up the dropdown
-            while (tsScan.DropDownItems.Count > staticButtonCount)
-            {
-                tsScan.DropDownItems.RemoveAt(0);
-            }
-
-            // Populate the dropdown
-            var defaultProfile = profileManager.DefaultProfile;
-            int i = 1;
-            foreach (var profile in profileManager.Profiles)
-            {
-                var item = new ToolStripMenuItem
-                {
-                    Text = profile.DisplayName.Replace("&", "&&"),
-                    Image = profile == defaultProfile ? Icons.accept_small : null,
-                    ImageScaling = ToolStripItemImageScaling.None
-                };
-                item.Click += async (sender, args) =>
-                {
-                    profileManager.DefaultProfile = profile;
-                    profileManager.Save();
-
-                    UpdateScanButton();
-
-                    await scanPerformer.PerformScan(profile, new ScanParams(), this, notify, ReceiveScannedImage());
-                    Activate();
-                };
-                tsScan.DropDownItems.Insert(tsScan.DropDownItems.Count - staticButtonCount, item);
-
-                i++;
-            }
-
-            if (profileManager.Profiles.Any())
-            {
-                tsScan.DropDownItems.Insert(tsScan.DropDownItems.Count - staticButtonCount, new ToolStripSeparator());
-            }
-        }
-
         private void ShowProfilesForm()
         {
             var form = FormFactory.Create<FProfiles>();
             form.ImageCallback = ReceiveScannedImage();
             form.ShowDialog();
-            UpdateScanButton();
         }
-
-
 
         private async void SavePDF(List<ScannedImage> images)
         {
