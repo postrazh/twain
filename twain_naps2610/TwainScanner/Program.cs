@@ -44,7 +44,7 @@ namespace TwainScanner
 
             // Show the main form
             var formFactory = kernel.Get<IFormFactory>();
-            var desktop = formFactory.Create<FDesktop>();
+            var desktop = formFactory.Create<Form1>();
             Invoker.Current = desktop;
             Application.Run(desktop);
         }

@@ -122,18 +122,7 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Setup\lib\64\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Setup\lib\dbg\64\NAPS2.WIA.dll" />
-    <Content Include="Setup\lib\dbg\NAPS2.WIA.dll" />
-    <Content Include="Setup\lib\dbg\twaindsm.dll" />
-    <Content Include="Setup\lib\NAPS2.WIA.dll" />
-    <Content Include="Setup\lib\NTwain.dll" />
-    <Content Include="Setup\lib\PdfSharp.dll" />
-    <Content Include="Setup\lib\twaindsm.dll" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />
   <Target Name="EnsureBclBuildImported" BeforeTargets="BeforeBuild" Condition="'$(BclBuildImported)' == ''">
