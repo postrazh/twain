@@ -192,32 +192,39 @@ namespace NAPS2.WinForms
 
         private async void btnConnect_Click(object sender, EventArgs e)
         {
-            defaultScanProfile = new ScanProfile { Version = ScanProfile.CURRENT_VERSION };
-            defaultScanProfile.DriverName = "twain";
-
-            defaultScanParams = new ScanParams();
-
-            var driver = driverFactory.Create(defaultScanProfile.DriverName);
-            driver.ScanProfile = defaultScanProfile;
-            driver.ScanParams = defaultScanParams;
-            var deviceList = driver.GetDeviceList();
-            if (!deviceList.Any())
-            {
-                MessageBox.Show("There is no connected device!");
-                return;
-            }
-            defaultScanProfile.Device = deviceList[0];
+            
      
         }
 
         private async void btnScan_Click(object sender, EventArgs e)
         {
+            // prepare the scan profile
             if (defaultScanProfile == null)
             {
-                MessageBox.Show("There is no connected device!");
-                return;
+                defaultScanProfile = new ScanProfile { Version = ScanProfile.CURRENT_VERSION };
+                defaultScanProfile.DriverName = "twain";
+
+                defaultScanParams = new ScanParams();
+
+                var driver = driverFactory.Create(defaultScanProfile.DriverName);
+                driver.ScanProfile = defaultScanProfile;
+                driver.ScanParams = defaultScanParams;
+                var deviceList = driver.GetDeviceList();
+                if (!deviceList.Any())
+                {
+                    MessageBox.Show("There is no connected device!");
+                    return;
+                }
+                defaultScanProfile.Device = deviceList[0];
             }
-            await scanPerformer.PerformScan(defaultScanProfile, defaultScanParams, this, notify, ReceiveScannedImage());
+
+            // perfor scan
+            do
+            {
+                await scanPerformer.PerformScan(defaultScanProfile, defaultScanParams, this, notify, ReceiveScannedImage());
+            } while (MessageBox.Show("Would you like to continue?", "Question", MessageBoxButtons.YesNo) == DialogResult.Yes)
+
+            SavePDF(imageList.Images);
         }
     }
 }
